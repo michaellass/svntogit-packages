@@ -1,0 +1,35 @@
+From 0c8e67fc253fa67d86f2f757b3e4c3090d065b5a Mon Sep 17 00:00:00 2001
+From: Michael Lass <bevan@bi-co.net>
+Date: Tue, 12 Jan 2021 17:41:08 +0100
+Subject: [PATCH] Patch to print and throw away rdrand result
+
+---
+ src/basic/random-util.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/basic/random-util.c b/src/basic/random-util.c
+index c8c34a2034..83a8d20000 100644
+--- a/src/basic/random-util.c
++++ b/src/basic/random-util.c
+@@ -136,6 +136,9 @@ int rdrand(unsigned long *ret) {
+                      : "=r" (v),
+                        "=qm" (success));
+         msan_unpoison(&success, sizeof(success));
++
++        log_notice("RDRAND returned (value/success): %lx/%hhx", v, success);
++
+         if (!success)
+                 return -EAGAIN;
+ 
+@@ -150,6 +153,8 @@ int rdrand(unsigned long *ret) {
+                 return log_debug_errno(SYNTHETIC_ERRNO(EUCLEAN),
+                                        "RDRAND returned suspicious value %lx, assuming bad hardware RNG, not using value.", v);
+ 
++        return -EOPNOTSUPP;
++
+         *ret = v;
+         return 0;
+ #else
+-- 
+2.30.0
+
